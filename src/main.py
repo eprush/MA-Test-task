@@ -2,33 +2,37 @@ from fake_useragent import UserAgent
 import requests
 from requests import Response
 
-from schemas import CookieSchema
+from schemas import EntryResponseSchema
+
+def raise_if_not_ok(r: Response):
+    if r.status_code != 200:
+        raise ValueError(f"Invalid status code: {r.status_code} with {r.url=}")
 
 
-def get_cookie(r: Response) -> str:
-    cookie_string = r.headers["Set-Cookie"]
-    cookie_string = cookie_string.split(";")
-    return cookie_string[0][3:]
-
-def get_data() -> CookieSchema:
-    entry_url = "https://sentry.lenta.tech"
-    entry_headers = {
+def get_data() -> EntryResponseSchema:
+    headers = {
         "Proxy-Authorization": "Basic",
         "Proxy-Connection": "keep-alive",
         "User-Agent": UserAgent(platforms="mobile").random
     }
+    entry_url = "https://sentry.lenta.tech"
+    response = requests.get(entry_url, headers=headers)
 
-    response = requests.get(entry_url, headers=entry_headers)
-    if response.status_code != 200:
-        raise ValueError(f"Invalid status code: {response.status_code}")
-    h = response.headers
-    result = {
-        "content_type": h["Content-Type"],
-        "connection": h["Connection"],
-        "vary": h["Vary"],
-        "cookie": get_cookie(response),
+    raise_if_not_ok(response)
+
+    data_to_validate = {
+        "content_type": response.headers["Content-type"],
+        "connection": response.headers["Connection"],
+        "vary": response.headers["Vary"],
+        "cookie": response.cookies,
     }
-    return CookieSchema(**result)
+    validated_data = EntryResponseSchema(**data_to_validate)
+
+    second_url = "https://lentochka.lenta.com/"
+    second_response = requests.get(second_url, headers=headers, cookies=validated_data.cookies.model_dump())
+
+    raise_if_not_ok(second_response)
+    return validated_data
 
 def parse_data(*args):
     ...

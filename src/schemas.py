@@ -1,14 +1,28 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, ConfigDict
 
-class CookieSchema(BaseModel):
-    content_type: str = "text/html"
-    connection: str = "keep-alive"
-    vary: str = "Accept-Language, Cookie"
-    cookie: str = Field(
+
+class CookiesSchema(BaseModel):
+    sc: str = Field(
+        ...,
+        description="Cookie value",
+        max_length=100,
+        min_length=50,
+        frozen=True,
+    )
+    sentrysid: str = Field(
         ...,
         max_length=100,
-        min_length=50
+        min_length=50,
+        frozen = True,
     )
+
+class EntryResponseSchema(BaseModel):
+    content_type: Literal["text/html"]
+    connection: Literal["keep-alive"]
+    vary: Literal["Accept-Language, Cookie"]
+    cookies: CookiesSchema
 
     model_config = ConfigDict(from_attributes=True)
 
