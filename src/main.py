@@ -24,14 +24,14 @@ def get_data() -> EntryResponseSchema:
         "content_type": response.headers["Content-type"],
         "connection": response.headers["Connection"],
         "vary": response.headers["Vary"],
-        "cookie": response.cookies,
+        "cookies": response.cookies,
     }
     validated_data = EntryResponseSchema(**data_to_validate)
 
     second_url = "https://lentochka.lenta.com/"
-    second_response = requests.get(second_url, headers=headers, cookies=validated_data.cookies.model_dump())
+    response = requests.get(second_url, headers=headers, cookies=validated_data.cookies.model_dump())
 
-    raise_if_not_ok(second_response)
+    raise_if_not_ok(response)
     return validated_data
 
 def parse_data(*args):
